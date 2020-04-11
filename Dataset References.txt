@@ -1,0 +1,5 @@
+http://snap.stanford.edu/data/
+https://data.boston.gov/dataset/street-sweeping-schedules/resource/9fdbdcad-67c8-4b23-b6ec-861e77d56227
+https://data.boston.gov/dataset/existing-bike-network/resource/f68b04c6-dd8e-4806-8239-5eff3f131010
+https://services.arcgis.com/sFnw0xNflSi8J0uh/arcgis/rest/services/Existing_Bike_Network_within_the_City_of_Boston/FeatureServer/0
+https://data.boston.gov/group/transportation
