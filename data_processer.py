@@ -2,6 +2,18 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
+def Euclidean(x, y):
+    geolocator = Nominatim()
+    x_com = x + ', Boston, Massachusetts'
+    y_com = y + ', Boston, Massachusetts'
+    x_loc = geolocator.geocode(x_com)
+    y_loc = geolocator.geocode(y_com)
+    if x_loc is None or y_loc is None:
+        return print(x_com, y_com)
+    return (((x_loc.latitude-y_loc.latitude)**2 + ((x_loc.longitude-y_loc.longitude)**2)))
+
+
 def data_to_graph():
     data = pd.read_excel(r'St-Data-Original.xlsx')
     # print(data)

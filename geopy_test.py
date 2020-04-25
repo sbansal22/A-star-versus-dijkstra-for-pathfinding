@@ -1,12 +1,27 @@
 from geopy.geocoders import Nominatim
+from Reader import *
+
+
+
+From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
 
 geolocator = Nominatim(user_agent="google maps")
-avenue = geolocator.geocode("Fisher Avenue, Boston")
+avenue = geolocator.geocode("Cheslea St, Boston")
 print(avenue.address)
 print((avenue.latitude, avenue.longitude))
 print(avenue.raw)
 
 street = geolocator.geocode("Boylston Street, Boston")
+print(street.address)
+print((street.latitude, street.longitude))
+print(street.raw)
+
+street = geolocator.geocode("Fairfield Street, Boston")
+print(street.address)
+print((street.latitude, street.longitude))
+print(street.raw)
+
+street = geolocator.geocode("Dead End, Boston")
 print(street.address)
 print((street.latitude, street.longitude))
 print(street.raw)
@@ -23,7 +38,7 @@ Euclidean_Distance_2 = ((street.latitude-way.latitude)**2 + (street.longitude-wa
 print('\nEuclidean Distance between David G Mugar Way and Boylstron Street is: ' + str(Euclidean_Distance_2) +'\n')
 
 # There is a crossing of Ditson Street and Draper Street
-# crossing = geolocator.geocode("Ditson Street and Draper Street, Boston")
-# print(crossing.address)
-# print((crossing.latitude, crossing.longitude))
-# print(crossing.raw)
+crossing = geolocator.geocode("Ditson Street at Draper Street, Boston")
+print(crossing.address)
+print((crossing.latitude, crossing.longitude))
+print(crossing.raw)
