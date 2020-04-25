@@ -3,16 +3,16 @@ from Reader import *
 from geopy.geocoders import Nominatim
 
 def Euclidean(x, y):
-    geolocator = Nominatim()
+    geolocator = Nominatim('google_maps')
     x_com = x + ', Boston, Massachusetts'
     y_com = y + ', Boston, Massachusetts'
     x_loc = geolocator.geocode(x_com)
     y_loc = geolocator.geocode(y_com)
     if x_loc is None:
-        return print(x_com)
+        return x_com
     if y_loc is None:
-        return print(y_com)
-    return (((x_loc.latitude-y_loc.latitude)**2 + ((x_loc.longitude-y_loc.longitude)**2)))
+        return y_com
+    return None
 
 
 def astar(G, start, end):
@@ -105,8 +105,13 @@ def astar(G, start, end):
 if __name__ == "__main__":
     # dist = Euclidean('Newbury Street, Boston', 'Boylston Street, Boston')
     From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
+    text_file = open("sample.txt", "w")
     for i in range(len(From)):
-        dist = Euclidean(From[i], To[i])
+        val = Euclidean(From[i], To[i])
+        if val!= None:
+            text_file.write(val)
+    text_file.close()
+
 
     # print(From)
     # directions = astar(G, 'Neptune Rd', 'Boylston St')
