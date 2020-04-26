@@ -6,6 +6,7 @@ def Euclidean(x, y):
     geolocator = Nominatim('google_maps')
     x_com = x + ', Boston, Massachusetts'
     y_com = y + ', Boston, Massachusetts'
+    print(geolocator.geocode(x_com))
     x_loc = geolocator.geocode(x_com)
     y_loc = geolocator.geocode(y_com)
     if x_loc is None:
@@ -54,6 +55,7 @@ def astar(G, start, end):
     visited[start] = True
 
     while len(Priority) > 0:
+        directions = []
         if visited[end] == True:
             return [ele for ele in reversed(directions)]
 
@@ -93,7 +95,7 @@ def astar(G, start, end):
     
     # Store the path to the end street from the start street
     end_copy = end
-    directions = []
+    # directions = []
     while end_copy:
         directions.append(end_copy)
         end_copy = prev[end_copy]

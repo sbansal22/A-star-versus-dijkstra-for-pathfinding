@@ -2,7 +2,27 @@ from geopy.geocoders import Nominatim
 from Reader import *
 
 
+def Euclidean(x, y):
+    geolocator = Nominatim(user_agent="google maps")
+    x_com = x + ', Boston, Massachusetts'
+    y_com = y + ', Boston, Massachusetts'
+    x_loc = geolocator.geocode(x_com)
+    y_loc = geolocator.geocode(y_com)
+    if x_loc is None:
+        return x_com
+    if y_loc is None:
+        return y_com
+    return None
 
+From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
+text_file = open("sample.txt", "w")
+for i in range(len(From)):
+    val = Euclidean(From[i], To[i])
+    if val!= None:
+        text_file.write(val +"\n")
+text_file.close()
+
+'''
 From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
 
 geolocator = Nominatim(user_agent="google maps")
@@ -42,3 +62,4 @@ crossing = geolocator.geocode("Ditson Street at Draper Street, Boston")
 print(crossing.address)
 print((crossing.latitude, crossing.longitude))
 print(crossing.raw)
+'''
