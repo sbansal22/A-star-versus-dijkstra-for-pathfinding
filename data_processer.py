@@ -2,6 +2,7 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 from geopy.geocoders import Nominatim
+import csv
 
 # # def Euclidean(x, y):
 # #     geolocator = Nominatim()
@@ -22,12 +23,15 @@ def geo(G, street_hashmap):
     for i in node_list:
         node_list_word.append(street_hashmap[i])
     for street in node_list:
-        street_com = street_hashmap[street] + ', Boston, Massachusetts'
-        street_loc = geolocator.geocode(street_com)
-        if street_loc is None:
+        if type(street_hashmap[street]) != type(', Boston, Massachusetts'):
             continue
-        else:
-            long_lat[street] = (street_loc.latitude, street_loc.longitude)
+        else: 
+            street_com = street_hashmap[street] + ', Boston, Massachusetts'
+            street_loc = geolocator.geocode(street_com)
+            if street_loc is None:
+                continue
+            else:
+                long_lat[street] = (street_loc.latitude, street_loc.longitude)
     
     return long_lat
 
@@ -89,3 +93,13 @@ if __name__ == "__main__":
     long_lat = geo(G, street_hashmap)
     # # print(long_lat['Washington St.'])
     print(long_lat)
+    csv_columns = ['No','Name','Country']
+    csv_file = "Names.csv"
+    try:
+        with open(csv_file, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for data in long_lat:
+                writer.writerow(data)
+    except IOError:
+        print("I/O error")
