@@ -1,18 +1,36 @@
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
+from geopy.geocoders import Nominatim
 
+# def Euclidean(x, y):
+#     geolocator = Nominatim()
+#     x_com = x + ', Boston, Massachusetts'
+#     y_com = y + ', Boston, Massachusetts'
+#     x_loc = geolocator.geocode(x_com)
+#     y_loc = geolocator.geocode(y_com)
+#     if x_loc is None or y_loc is None:
+#         return print(x_com, y_com)
+#     return (((x_loc.latitude-y_loc.latitude)**2 + ((x_loc.longitude-y_loc.longitude)**2)))
 
-def Euclidean(x, y):
-    geolocator = Nominatim()
-    x_com = x + ', Boston, Massachusetts'
-    y_com = y + ', Boston, Massachusetts'
-    x_loc = geolocator.geocode(x_com)
-    y_loc = geolocator.geocode(y_com)
-    if x_loc is None or y_loc is None:
-        return print(x_com, y_com)
-    return (((x_loc.latitude-y_loc.latitude)**2 + ((x_loc.longitude-y_loc.longitude)**2)))
-
+def geo(G, street_hashmap):
+    long_lat = dict()
+    geolocator = Nominatim(user_agent="google maps")
+    # List of encoded nodes
+    node_list = list(G.nodes())
+    print(node_list)
+    node_list_word = []
+    for i in node_list:
+        node_list_word.append(street_hashmap[i])
+    for street in node_list:
+        street_com = street_hashmap[street_hashmap((node_list[street]))] + ', Boston, Massachusetts'
+        street_loc = geolocator.geocode(street_com)
+        if street_com is None:
+            continue
+        else:
+            long_lat[street] = (street_loc.latitude, street_loc.long_longitude)
+    
+    return long_lat
 
 def data_to_graph():
     data = pd.read_excel(r'St-Data-Original.xlsx')
@@ -83,5 +101,9 @@ def data_to_graph():
 
 if __name__ == "__main__":
     G, street_hashmap = data_to_graph()
-    nx.draw(G, with_labels=True, font_weight='bold')
-    plt.show()
+    print(street_hashmap)
+    # nx.draw(G, with_labels=True, font_weight='bold')
+    # plt.show()
+    long_lat = geo(G, street_hashmap)
+    # print(long_lat['Washington St.'])
+    print(long_lat)
