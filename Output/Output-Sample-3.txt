@@ -1,0 +1,7 @@
+Directions using Djikstra Algorithm: ['Ditson St', 'Geneva Ave', 'Bowdoin St', 'Somerset St', 'Tremont St', 'Beacon St', 'Ashburton Pl', 'Cambridge St', 'Mount Vernon St', 'Pinckney St']
+Directions using Networkx Algorithm: ['Ditson St', 'Geneva Ave', 'Washington St', 'Commonwealth Ave', 'Cambridge St', 'Mount Vernon St', 'Pinckney St']
+Total distance to your destination according to Djikstra will be about: 6.0360000000000005 miles
+Total distance to your destination according to NetworkX will be about: 15.892 miles
+If you leave now at 01:45:51, you will reach your destination at about: 02:00:21
+
+
