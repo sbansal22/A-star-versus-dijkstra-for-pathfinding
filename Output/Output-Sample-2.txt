@@ -1,0 +1,5 @@
+Directions using Djikstra Algorithm: ['Washington St', 'Ronald St', 'Columbia Rd', 'East Cottage St', 'George St']
+Directions using Networkx Algorithm: ['Washington St', 'Hancock St', 'East Cottage St', 'George St']
+Total distance to your destination according to Djikstra will be about: 4.293 miles
+Total distance to your destination according to NetworkX will be about: 18.398 miles
+If you leave now at 17:27:42, you will reach your destination at about: 17:38:00

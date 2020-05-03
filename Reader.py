@@ -32,13 +32,12 @@ def readMyFile(filename):
 
 if __name__ == "__main__":
 
-    From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
-    # print(nx.shortest_path(G, 'Neptune Rd', 'Boylston St'))
-    # fig = plt.figure()
-    # ax = plt.axes()
-    # nx.draw(G, with_labels=True)
-    # plt.grid()
-    # plt.show()
+    From, To, Miles, G = readMyFile('St-Data-Original - Processed - Copy.csv')
+    fig = plt.figure()
+    ax = plt.axes()
+    nx.draw(G, with_labels=True)
+    plt.grid()
+    plt.show()
 
 
 

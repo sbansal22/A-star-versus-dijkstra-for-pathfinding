@@ -1,0 +1,15 @@
+Directions using A-star Algorithm, Euclidean Distance: ['Washington St', 'Harvard St', 'Blue Hill Ave', 'Greenwood St', 'Glenway St', 'Charlotte St']
+Total distance to your destination according to A-star using Euclidean Distance will be about: 0.9761000000000001 miles
+You have travelled a Euiclidean distance of: 0.0052572763444512175
+Average runtime is: 81.7009563
+Directions using A-star Algorithm, Manhatan Distance: ['Washington St', 'Harvard St', 'Blue Hill Ave', 'Greenwood St', 'Glenway St', 'Charlotte St']
+Total distance to your destination according to A-star using Manhatan Distance will be about: 0.9761000000000001 miles
+You have travelled a Manhatan distance of: 0.10170210000001134
+Average runtime is: 88.10418690999998
+
+
+Directions using Djikstra Algorithm: ['Washington St', 'Harvard St', 'Blue Hill Ave', 'Greenwood St', 'Glenway St', 'Charlotte St']
+Directions using Networkx Algorithm: ['Washington St', 'Blue Hill Ave', 'Greenwood St', 'Glenway St', 'Charlotte St']
+Total distance to your destination according to Djikstra will be about: 0.9761000000000001 miles
+Total distance to your destination according to NetworkX will be about: 1.9041000000000001 miles
+Average runtime is: 0.06651282

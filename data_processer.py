@@ -14,26 +14,26 @@ import csv
 # #         return print(x_com, y_com)
 # #     return (((x_loc.latitude-y_loc.latitude)**2 + ((x_loc.longitude-y_loc.longitude)**2)))
 
-def geo(G, street_hashmap):
-    long_lat = dict()
-    geolocator = Nominatim(user_agent="google maps")
-    # List of encoded nodes
-    node_list = list(G.nodes())
-    node_list_word = []
-    for i in node_list:
-        node_list_word.append(street_hashmap[i])
-    for street in node_list:
-        if type(street_hashmap[street]) != type(', Boston, Massachusetts'):
-            continue
-        else: 
-            street_com = street_hashmap[street] + ', Boston, Massachusetts'
-            street_loc = geolocator.geocode(street_com)
-            if street_loc is None:
-                continue
-            else:
-                long_lat[street] = (street_loc.latitude, street_loc.longitude)
+# def geo(G, street_hashmap):
+#     long_lat = dict()
+#     geolocator = Nominatim(user_agent="google maps")
+#     # List of encoded nodes
+#     node_list = list(G.nodes())
+#     node_list_word = []
+#     for i in node_list:
+#         node_list_word.append(street_hashmap[i])
+#     for street in node_list:
+#         if type(street_hashmap[street]) != type(', Boston, Massachusetts'):
+#             continue
+#         else: 
+#             street_com = street_hashmap[street] + ', Boston, Massachusetts'
+#             street_loc = geolocator.geocode(street_com)
+#             if street_loc is None:
+#                 continue
+#             else:
+#                 long_lat[street] = (street_loc.latitude, street_loc.longitude)
     
-    return long_lat
+#     return long_lat
 
 
 def drop_dead_ends(df):
@@ -85,21 +85,22 @@ def data_to_graph():
 if __name__ == "__main__":
     ### TEST data_to_graph() ###
     G, street_hashmap = data_to_graph()
+    print(street_hashmap)
     # print(street_hashmap)
     # nx.draw(G, with_labels=True, font_weight='bold')
     # plt.show()
 
-    ### TEST geo() ###
-    long_lat = geo(G, street_hashmap)
-    # # print(long_lat['Washington St.'])
-    print(long_lat)
-    csv_columns = ['No','Name','Country']
-    csv_file = "Names.csv"
-    try:
-        with open(csv_file, 'w') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-            writer.writeheader()
-            for data in long_lat:
-                writer.writerow(data)
-    except IOError:
-        print("I/O error")
+    # ### TEST geo() ###
+    # long_lat = geo(G, street_hashmap)
+    # # # print(long_lat['Washington St.'])
+    # print(long_lat)
+    # csv_columns = ['No','Name','Country']
+    # csv_file = "Names.csv"
+    # try:
+    #     with open(csv_file, 'w') as csvfile:
+    #         writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+    #         writer.writeheader()
+    #         for data in long_lat:
+    #             writer.writerow(data)
+    # except IOError:
+    #     print("I/O error")

@@ -6,26 +6,102 @@ import sys
 from datetime import datetime as dt
 from datetime import timedelta as td
 import timeit
+from math import radians, cos, sin, asin, sqrt
 
-def Euclidean(x, y, heuristic):
+# -----------------------------------------------------------------------------
+
+def Euclidean(x, y, heuristic, traffic_level):
+    '''
+    Calculates the Euclidean distance between the cities x and
+    y in miles, based on the input heuristic and traffic level
+
+    Input - cities x and y
+            heuristic type - euclidiean or manhatan
+            traffic type - low, high
+    Output - Euclidean or Manhatan Distance, adjusted with traffic
+
+    '''
+
+    # Obtaining the geographical location of the streets
     for i in street_hashmap:
         if x == street_hashmap[i]:
             if i in street_locations:
                 x_loc = street_locations[i]
             else:
+                # Geographical center of Boston, MA
                 x_loc = (42.3601, -71.0589)
         if y == street_hashmap[i]:
             if i in street_locations:
                 y_loc = street_locations[i]
             else:
-                x_loc = (42.3601, -71.0589)
+                # Geographical center of Boston, MA
+                y_loc = (42.3601, -71.0589)
     
+    # Computing the manhatan distance based on the raw latitude and longitude
+    # from the geographical locations for the streets
     if heuristic == 'Manhatan':
         return abs(x_loc[0]-y_loc[0]) + abs(x_loc[1]-y_loc[1])
-    else: 
-        return (((x_loc[0]-y_loc[0])**2 + ((x_loc[1]-y_loc[1])**2)))
+    
+    # Computing the euclidean distance between the street nodes after 
+    # converting the geographical location to coordinates on the map
+    else:
+        a = sin((radians(y_loc[0]-x_loc[0]))/2)**2 + cos(x_loc[0]) * cos(y_loc[0]) * sin((radians(y_loc[1]-x_loc[1]))/2)**2
+        dist_eu = 3956*(2*asin(sqrt(a)))
 
-def astar(start, end, heuristic):
+        # Returning the heuristic, which is a combination of the actual
+        # geographical distance between the nodes as well as the traffic
+        # based on the traffic function returned index
+        return dist_eu * traffic(x, traffic_level)
+
+# -----------------------------------------------------------------------------
+def traffic(street, traffic_level):
+    '''
+    Creates a traffic adjustment index based on the input traffic
+    level
+
+    low - fair traffic conditions in the Boston City area
+    high - bad traffic conditions in the Boston City area
+    auto - time determined traffic conditions in the Boston City area
+
+    Input - street in consideration
+            given traffic_level
+    Output - traffic adjustment index
+
+    '''
+    
+    # Geographical center of Boston, MA
+    boston_city = (42.3601, -71.0589)
+    for i in street_hashmap:
+        if street == street_hashmap[i]:
+            if i in street_locations:
+                x_loc = street_locations[i]
+            else:
+                x_loc = boston_city
+
+    # Computing the distance of the current node from the Boston City center
+    a = sin((radians(boston_city[0]-x_loc[0]))/2)**2 + cos(x_loc[0]) * cos(boston_city[0]) * sin((radians(boston_city[1]-x_loc[1]))/2)**2
+    dist_eu = 3956*(2*asin(sqrt(a)))
+
+    # If the node is with one mile of the city center, impose the traffic conditions
+    if dist_eu < 1:
+        if traffic_level == 'low':
+            return 1.5
+        if traffic_level == 'high':
+            return 2
+        if traffic_level == 'auto':
+            # Computes the traffic conditions based on the current time
+            current_time = dt.now()
+            current_time = current_time.strftime("%H:%M:%S")
+            if '8:00:00' < current_time < '9:00:00' or '17:00:00' < current_time < '18:00:00':
+                return 2
+            if '7:00:00' < current_time < '8:00:00' or '9:00:00' < current_time < '10:00:00' or '16:00:00' < current_time < '17:00:00' or '18:00:00' < current_time < '19:00:00':
+                return 1.5
+            else:
+                return 1
+    else:
+        return 1
+
+def astar(start, end, heuristic, traffic_level):
     '''
     Finds the optimal shortest path from a starting st. to the
     ending st. using Djikstra's Algorithm
@@ -39,8 +115,6 @@ def astar(start, end, heuristic):
     nodelist = list(G.nodes())
     # A new dictionary to store the distances
     dist = dict()
-    # A new dictionary to store the visited flag
-    visited = dict()
     # A new dictionary to store the previous nodde name
     prev = dict()
     # A priority queue to hold the unprocessed nodes
@@ -48,8 +122,6 @@ def astar(start, end, heuristic):
 
     # Initializing the dictionaries
     for street in nodelist:
-        # None of the streets are visited
-        visited[street] = False
         # None of the streets are mapped
         prev[street] = None
         # The initial distance to reach each
@@ -60,34 +132,55 @@ def astar(start, end, heuristic):
     # no number of miles to reach it
     dist[start] = 0.0
 
-    # We start on this street, so it is alreadt visited
-    visited[start] = True
-
     while len(Priority) > 0:
-        directions = []
-
-
         # Find the closest street to the street being
         # processed currently
         min_dist_street_i = 0
         for street in range(len(Priority)):
-            if dist[Priority[street]] + Euclidean(Priority[street], end, heuristic) < dist[Priority[min_dist_street_i]] + Euclidean(Priority[min_dist_street_i],end, heuristic):
+            if dist[Priority[street]] + Euclidean(Priority[street], end, heuristic, traffic_level) < dist[Priority[min_dist_street_i]] + Euclidean(Priority[min_dist_street_i],end, heuristic, traffic_level):
                 min_dist_street_i = street 
         
         # Remove the street being currently processed
         # from the queue 
-        curr = Priority.pop(street)
+        curr = Priority.pop(min_dist_street_i)
 
-        # Mark the current street as visited
-        visited[curr] = True
+        if curr == end:
+            # Store the path to the end street from the start street
+            end_copy = end
+            directions = []
+            while end_copy:
+                directions.append(end_copy)
+                end_copy = prev[end_copy]
+
+            # Arrange the streets to make the tour suggestions
+            output_directions = [ele for ele in reversed(directions)] 
+
+            # Intializing variables
+            output_distance = 0.0
+            time = 0
+            avg_speed = 25 #mph
+
+            # Computing the total distance traveled and the total time taken, based
+            # on the traffic conditions
+            for i in range(len(output_directions)-1):
+                output_distance += float(G.edges[output_directions[i],output_directions[i+1]]['weight'])
+                time += output_distance*10*traffic(output_directions[i], traffic_level)/avg_speed
+
+            # Computes the ETA
+            current_time = dt.now()
+            dest_time = current_time + td(hours=time)
+            dest_time = dest_time.strftime("%H:%M:%S")
+            current_time = current_time.strftime("%H:%M:%S")
+
+            # Return the processed path if we have iterated over the destination
+            return output_directions, output_distance*10, time*60, dest_time, current_time
 
         # Find out all the neighbors of the current street,
         # or the streets that connect to this street
         neighbors = list(G.neighbors(curr))
         temp_list = []
         for neighbor in neighbors:
-            if visited[neighbor] != True:
-                temp_list.append(neighbor)
+            temp_list.append(neighbor)
         neighbors = temp_list
 
         # Compare the current interation distance for the street
@@ -98,29 +191,8 @@ def astar(start, end, heuristic):
             if dist[curr] + float(G.edges[curr,unvisited_neighbor]['weight']) < dist[unvisited_neighbor]:
                 dist[unvisited_neighbor] = dist[curr] + float(G.edges[curr,unvisited_neighbor]['weight'])
                 prev[unvisited_neighbor] = curr
-            Priority.append(unvisited_neighbor)
+                Priority.append(unvisited_neighbor)
     
-    # Store the path to the end street from the start street
-    end_copy = end
-    directions = []
-    while end_copy:
-        directions.append(end_copy)
-        end_copy = prev[end_copy]
-
-    output_directions = [ele for ele in reversed(directions)] 
-    output_distance = 0.0
-    for i in range(len(output_directions)-1):
-        output_distance += float(G.edges[output_directions[i],output_directions[i+1]]['weight'])
-
-    avg_speed = 25 #mph
-    time = dt.now()
-    time += td(hours=output_distance/avg_speed)
-    time = time.strftime("%H:%M:%S")
-
-    # Return the processed path
-    return output_directions, output_distance, time 
-
-
 if __name__ == "__main__":
     # dist = Euclidean('Newbury Street, Boston', 'Boylston Street, Boston')
     From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
@@ -128,21 +200,21 @@ if __name__ == "__main__":
     street_hashmap = {0: 'Draper St', 1: 'Ditson St', 2: 'Perkins St', 3: 'Moraine St', 4: 'Tremont St', 5: 'Charles St', 6: 'Walnut St', 7: 'Lawn St', 8: 'Fisher Ave', 9: 'East First St', 10: 'East Second St', 11: 'Centre St', 12: 'Melville Ave', 13: 'Walnut Ave', 14: 'Harold St', 15: 'Cheslea St', 16: 'Princeton St', 17: 'Bowdoin St', 18: 'Bowdoin Ave', 19: 'Talbot Ave', 20: 'Dorchester Ave', 21: 'West Canton St', 22: 'Lamartine St', 23: 'Washington St', 24: 'Morton St', 25: 'Maryknoll St', 26: 'Commonwealth Ave', 27: 'Chiswick Rd', 28: 'Merchants Row', 29: 'Commercial St', 30: 'Boylston St', 31: 'Porter St', 32: 'Mozart St', 33: 'Dimock St', 34: 'School St', 35: 'Moulton St', 36: 'Medford St', 37: 'Gladeside Ave', 38: 'Ridgeview Ave', 39: 'Quincy St', 40: 'Columbia Rd', 41: 'David G Mugar Way', 42: 'Market St', 43: 'South Hobbart St', 44: 'Blue Hill Ave', 45: 'Normandy St', 46: 'Sumner St', 47: 'Geneva Ave', 48: 'Cambridge St', 49: 'Myrtle St', 50: 'Beacon St', 51: 'Beaver Pl', 52: 'Alford St', 53: 'Somerville Town Line', 54: 'Chauncy St', 55: 'Summer St', 56: 'Massachusetts Ave', 57: 'Dalton St', 58: 'Oakland St', 59: 'Nashua St', 60: 'Parker Hill Ave', 61: 'State St', 62: 'Milk St', 63: 'Arlington St', 64: 'Hereford St', 65: 'Prescott St', 66: 'Crescent Ave', 67: 'Sydney St', 68: 'Olney St', 69: 'Melcher St', 70: 'Congress St', 71: 'Maverick St', 72: 'Perrin St', 73: 'Dudley St', 74: 'Winthrop St', 75: 'Lowney Way', 76: 'Dead End', 77: 'Back St', 78: 'Grampian Way', 79: 'Caspian Way', 80: 'Chestnut Ave', 81: 'Curtis St', 82: 'Moore St', 83: 'Greenbrier St', 84: 'Woodrow Ave', 85: 'Callender St', 86: 'Park St', 87: 'Caldwell St', 88: 'Columbus Ave', 89: 'Leedsville St', 90: 'Adams St', 91: 'Waldeck St', 92: 'Raynor Cir', 93: 'Sojourner Truth Ct', 94: 'Hillside St', 95: 'Pontiac St', 96: 'Gorham St', 97: 'Kelton St', 98: 'Roland St', 99: 'Bunker Hill St', 100: 'Montrose St', 101: 'Copeland St', 102: 'Merrimac St', 103: 'North Washington St', 104: 'Florence St', 105: 'Ashmont St', 106: 'Wrentham St', 107: 'Harvard Ave', 108: 'Everett St', 109: 'Englewood Ave', 110: 'Chestnut Hill Ave', 111: 'Milford St', 112: 'Hanson St', 113: 'River St', 114: 'Dayton St', 115: 'Temple St', 116: 'Eldon St', 117: 'Nottingham St', 118: 'Humboldt Ave', 119: 'Elm Hill Ave', 120: 'D St', 121: 'Dorchester St', 122: 'Brighton Av', 123: 'Ashford St', 124: 'Southampton St', 125: 'Topeka St', 126: 'Creighton St', 127: 'South Huntington Ave', 128: 'Willis St', 129: 'East Cottage St', 130: 'Sanford St', 131: 'Monson St', 132: 'Mount Ida Rd', 133: 'Warren St', 134: 'Songin Father Anthony Way', 135: 'Melbourne St', 136: 'Faneuil St', 137: 'Hendry St', 138: 'Main St', 139: 'Norfolk St', 140: 'Auburn Sq', 141: 'Belfort St', 142: 'Savin Hill Ave', 143: 'Walk Hill St', 144: 'Neptune Rd', 145: 'Saratoga St', 146: 'Oakview Ter', 147: 'Rutherford Ave', 148: 'Chelsea St', 149: 'Allerton St', 150: 'Derne St', 151: 'Moreland St', 152: 'Hanover St', 153: 'Blossom St', 154: 'Emerson Pl', 155: 'Tucker St', 156: 'Don St', 157: 'Irma St', 158: 'Jamaicaway', 159: 'Bakersfield St', 160: 'High St', 161: 'Bartlett St', 162: 'Eustis St', 163: 'Forest St', 164: 'Claremont St', 165: 'Crescent St', 166: 'Brookline Town Line', 167: 'Barry St', 168: 'Burroughs St', 169: 'Eliot St', 170: 'New Rutherford Ave', 171: 'Causeway St', 172: 'Torrey St', 173: 'Arcadia St', 174: 'Kingston St', 175: 'Harrison Avenue Ext', 176: 'Edgerly Rd', 177: 'Hemenway St', 178: 'Franklin St', 179: 'East St', 180: 'South St', 181: 'Green St', 182: 'Newbury St', 183: 'Stuart St', 184: 'Fenway', 185: 'Park Dr', 186: 'Saxton St', 187: 'Bennington St', 188: 'Mount Vernon', 189: 'Orkney Rd', 190: 'Berkeley St', 191: 'Linden St', 192: 'Babcock St', 193: 'Meridian St', 194: 'Paul Gore St', 195: 'Brookway Rd', 196: 'Williams St', 197: 'Delle Ave', 198: 'Stoughton St', 199: 'St James St', 200: 'Regent St', 201: 'Powers St', 202: 'Herald St', 203: 'Randolph St', 204: 'Atherton St', 205: 'Walden St', 206: 'Round Hill St', 207: 'William F. McClellan Hwy', 208: 'Willowwood St', 209: 'Harvard St', 210: 'Melnea Cass Blvd', 211: 'Somerset St', 212: 'Carleton St', 213: 'Selkirk Rd', 214: 'West Walnut Park', 215: 'White St', 216: 'Laurel St', 217: 'Amory St', 218: 'Archdale Rd', 219: 'Ronald St', 220: 'Armstrong St', 221: 'New Chardon St', 222: 'East Fourth St', 223: 'Thomas Park', 224: 'Brighton Ave', 225: 'Binford St', 226: 'Parsons St', 227: 'Goodenough St', 228: 'Islington St', 229: 'Imrie Rd', 230: "William Cardinal O'Connell Way", 231: 'Armington St', 232: 'Atkinson St', 233: 'Alpine St', 234: 'Richfield St', 235: 'North St', 236: 'Monument Sq', 237: 'Sullivan St', 238: 'Walker St', 239: 'Hawkins St', 240: 'Lindall St', 241: 'Fenwood Rd', 242: 'Francis St', 243: 'C St', 244: 'E St', 245: 'Kneeland St', 246: 'Frontenac St', 247: 'South Sydney St', 248: 'Maffa Way', 249: 'Central St', 250: 'Huntington Ave', 251: 'Exeter St', 252: 'Central Sq', 253: 'Spruce St', 254: 'Charlesgate East', 255: 'Wyman St', 256: 'Essex St', 257: 'Freeport St', 258: 'Newton Town Line', 259: 'East Seventh St', 260: 'East Eighth St', 261: 'Atlantic Ave', 262: 'Canal St', 263: 'Joy St', 264: 'EVERETT TOWN LINE', 265: 'Hampden St', 266: "Upham's Ct", 267: 'Douglass Park', 268: 'Lewis Wharf', 269: 'East Broadway', 270: 'William J. Day Blvd', 271: 'Neponset Ave', 272: 'I St', 273: 'Brookline Ave', 274: 'Kenmore St', 275: 'Pleasant St', 276: 'East Eagle St', 277: 'Water St', 278: 'East Service Road', 279: 'Sudbury St', 280: 'Salem St', 281: 'Cummings Rd', 282: 'G St', 283: 'K St', 284: 'Westville St', 285: 'Marginal St', 286: 'Lomasney Way', 287: 'Holborn St', 288: 'Gaston St', 289: 'Lucerne St', 290: 'Court St', 291: 'Sheridan St', 292: 'East Concord St', 293: 'East Newton St', 294: 'Day St', 295: 'Babson St', 296: 'West Selden St', 297: 'West First St', 298: 'Farragut Rd', 299: 'Corey Rd', 300: 'Chaucer St', 301: 'Sawyer Ave', 302: 'Broad St', 303: 'India St', 304: 'West Broadway', 305: 'Mascoma St', 306: 'Egleston St', 307: 'Belvidere St', 308: 'North Grove St', 309: 'Hawley St', 310: 'Devonshire St', 311: 'Cookson Ter', 312: 'Faunce Rd', 313: 'Albany St', 314: 'L St', 315: 'Calumet St', 316: 'Southern Ave', 317: 'SW Corridor Path', 318: 'Monsignor Patrick J Lydon Way', 319: 'Mallet St', 320: 'Minden St', 321: 'Nixon St', 322: 'Clementine Park', 323: 'Border St', 324: 'Havre St', 325: 'Vine St', 326: 'Harrison Ave', 327: 'Roach St', 328: 'Crossman St', 329: 'Rugg Rd', 330: 'Bradford Rd', 331: 'Parker St', 332: 'Vaughan Ave', 333: 'Fremont St', 334: 'Dania St', 335: 'Shawmut Ave', 336: 'Clayton St', 337: 'Hancock St', 338: 'Von Hillern St', 339: 'Mt Pleasant Ave', 340: 'Auckland St', 341: 'West Ninth St', 342: 'Lark St', 343: 'Charter St', 344: 'Treadway Rd', 345: 'Highland St', 346: 'Lambert Ave', 347: 'Arlington Ave', 348: 'Bruce St', 349: 'Guild Row', 350: 'Ormond St', 351: 'Wellington Hill St', 352: 'Mascot St', 353: 'Greenwich St', 354: 'Leonard St', 355: 'Harriet St', 356: 'Madeline St', 357: 'Fayston St', 358: 'Putnam St', 359: 'Glendon St', 360: 'Whitfield St', 361: 'Aspen St', 362: 'Surrey St', 363: 'Fellows St', 364: 'Mercer St', 365: 'Brainerd Rd', 366: 'Hiawatha Rd', 367: 'N St', 368: 'Poplar St', 369: 'Firth Rd', 370: 'King St', 371: 'Lawrence Ave', 372: 'Intervale St', 373: 'Cross St', 374: 'Lewis St', 375: 'M St', 376: 'Church St', 377: 'Winter St', 378: 'Russell St', 379: 'Gay Head St', 380: 'Duncan St', 381: 'Haviland St', 382: 'Westland Ave', 383: 'Pond St', 384: 'Florida St', 385: 'Granfield Ave', 386: 'East Third St', 387: 'West Fourth St', 388: 'Rosseter St', 389: 'Sunset St', 390: 'Ridgemont St', 391: 'Seaver St', 392: 'Roxbury St', 393: 'Malcolm X Blvd', 394: 'Sagamore St', 395: 'Paris St', 396: 'Sutherland Rd', 397: 'Circuit St', 398: 'Bragdon St', 399: 'Tibbetts Town Way', 400: 'Dewitt Dr', 401: 'Priesing St', 402: 'Withington St', 403: 'Magazine St', 404: 'Orleans St', 405: 'Jeffries St', 406: 'North Beacon St', 407: 'Braintree St', 408: 'West Eighth St', 409: 'Riverway', 410: 'Cummins Hwy', 411: 'Oak Square Ave', 412: 'Msgr Jacobbe Rd', 413: 'Hamilton St', 414: 'Kilsyth Rd', 415: 'Lanark Rd', 416: 'New England Ave', 417: 'Mattapan St', 418: 'Messinger St', 419: 'Clarendon St', 420: 'Dartmouth St', 421: 'Haverford St', 422: 'Brookside Ave', 423: 'Hillsboro Rd', 424: 'Westmore Rd', 425: 'Donwood Ter', 426: 'Topliff St', 427: 'Condor St', 428: "St Mark's Rd", 429: 'Hollander St', 430: 'Spofford Rd', 431: 'Allston St', 432: 'Seaverns Ave', 433: 'Terrace St', 434: 'Geneva St', 435: 'Buttonwood St', 436: 'Fawndale Rd', 437: 'Harborview St', 438: 'Westminster St', 439: 'Warwick St', 440: 'Courtland Rd', 441: 'Magnolia St', 442: 'Glenville Ave', 443: 'Purchase St', 444: 'Dane St', 445: 'West Seventh St', 446: 'Nira Ave', 447: 'Old Colony Ave', 448: 'Mitchell St', 449: 'Park Plz', 450: 'Thomas St', 451: 'Delhi St', 452: 'Harrishof St', 453: 'Dennison St', 454: 'Pond View Ave', 455: 'Homes Ave', 456: 'Blackstone St', 457: 'Fleet St', 458: 'Marine Rd', 459: 'Harold Park', 460: 'Holworthy St', 461: 'South Hobart St', 462: 'East Berkeley St', 463: 'East Lenox St', 464: 'Traveler St', 465: 'East Brookline St', 466: 'Wadsworth St', 467: 'City Sq', 468: 'Hudson St', 469: 'Bardwell St', 470: 'Cornwall St', 471: 'Union St', 472: 'Austin St', 473: 'George R. Visconti Rd', 474: 'Bowker St', 475: 'Arch St', 476: 'Tremlett St', 477: 'Townsend St', 478: 'Maverick Sq', 479: 'West Tremlett St', 480: 'Fottler Rd', 481: 'Gordon St', 482: 'Aspinwall Rd', 483: 'Federal St', 484: 'Farrington Ave', 485: 'Cedar St', 486: 'Linwood St', 487: 'Murray Hill Rd', 488: 'Meadowbank Ave', 489: 'Catawba St', 490: 'Rockland St', 491: 'Dale St', 492: 'Viking Ter', 493: 'Beach St', 494: 'Snow Hill St', 495: 'Brimmer St', 496: 'Highland Ave', 497: 'Howe Ter', 498: 'Huntington Ave Underpass', 499: 'Wallingford Rd', 500: 'Wainwright St', 501: 'Reedsdale St', 502: 'Manchester St', 503: 'High Rock Way', 504: 'Norton St', 505: 'Estey St', 506: 'Bucknam St', 507: 'Sachem St', 508: 'Thornton St', 509: 'Cotting St', 510: 'Juliette St', 511: 'Jones Ave', 512: 'Ballou Ave', 513: 'Arborway', 514: 'Mt Vernon Pl', 515: 'Fox St', 516: 'Crawford St', 517: 'Bellevue St', 518: 'Stanley St', 519: 'Lenox St', 520: 'Medfield St', 521: 'Van Ness St', 522: 'Price Rd', 523: 'Woolson St', 524: 'Standish St', 525: 'Wales St', 526: 'Edinboro St', 527: 'Foster St', 528: 'Knapp St', 529: 'Lake St', 530: 'Kenrick St', 531: 'Webster St', 532: 'Colliston Rd', 533: 'Kinross Rd', 534: 'Leston St', 535: 'Ipswich St', 536: 'Telegraph St', 537: 'Sullivan Square', 538: 'Millet St', 539: 'Pine St', 540: 'Oak St', 541: 'Springdale St', 542: 'South Bremen St', 543: 'Percival St', 544: 'Henshaw St', 545: 'Germania St', 546: 'Bay St', 547: 'Mountain Ave', 548: 'Parkman St', 549: 'West St', 550: 'Avery St', 551: 'St Botolph St', 552: 'Allstate Rd', 553: 'Proctor St', 554: 'Lyndhurst St', 555: 'Almont St', 556: 'New St', 557: 'Bismarck St', 558: 'Mead St', 559: 'Nottinghill Rd', 560: 'Deer St', 561: 'Dalrymple St', 562: 'Groveland St', 563: 'Standard St', 564: 'Chatham St', 565: 'Minton St', 566: 'Portland St', 567: 'Lyndeboro St', 568: 'Theodore St', 569: 'Long Ave', 570: 'Bremen St', 571: 'Cottage St', 572: 'Stockwell St', 573: 'East Sixth St', 574: 'Brooks St', 575: 'Sturbridge St', 576: 'Robinson St', 577: 'Monument St', 578: 'Monument Ave', 579: 'Marion St', 580: 'American Legion Hwy', 581: 'Mallon Rd', 582: 'Bernard St', 583: 'Lincoln St', 584: 'Grotto Glen Rd', 585: 'Sigourney St', 586: 'Waverly St', 587: 'Constitution Rd', 588: 'Irving St', 589: 'West Cedar St', 590: 'Stillman St', 591: 'Endicott St', 592: 'North Sq', 593: 'Eagle Sq', 594: 'Lawrence St', 595: 'Richmond St', 596: 'Mather St', 597: 'Speedwell St', 598: 'Charlesgate West', 599: 'Hano St', 600: 'Bullard St', 601: 'Tyler St', 602: 'Crowell St', 603: 'Boyden St', 604: 'Lyford St', 605: 'Wait St', 606: 'Preble Street', 607: 'Mt Vernon St', 608: 'Preble St', 609: 'Morrissey  William T Blvd', 610: 'Newmarket Sq', 611: 'Wilder St', 612: 'St Stephen St', 613: 'Strathmore Rd', 614: 'Bromfield St', 615: 'Brighton St', 616: 'Tiverton Rd', 617: '191 Park Dr', 618: 'Peterborough St', 619: 'Common St', 620: 'Norwell St', 621: 'Heath St', 622: 'Ward St', 623: 'Gove St', 624: 'Stratton St', 625: 'Middlesex St', 626: 'Theodore A. Glynn Way', 627: 'Wellington Pl', 628: 'Waltham St', 629: 'Gordon Ave', 630: 'Turtle Pond Pkwy', 631: 'Sherman St', 632: 'Brinsley St', 633: 'Morse St', 634: 'Kilmarnock St', 635: 'Spalding St', 636: 'Forest Hills St', 637: 'Elmwood St', 638: 'Pearl St', 639: 'Newland St', 640: 'Sudan St', 641: 'Prince St', 642: 'Boardman St', 643: 'Shelby St', 644: 'Hubbardston Rd', 645: 'Romsey St', 646: 'St Cecelia St', 647: 'Decatur St', 648: 'Polk St', 649: 'Welles Ave', 650: 'Kenwood St', 651: 'Northern Ave', 652: 'Elm St', 653: 'West Dedham St', 654: 'Lexington St', 655: 'Glen Rd', 656: 'St Alphonsus St', 657: 'West Park St', 658: 'Brook Marshall Rd', 659: 'Kerr Pl', 660: 'Ashburton Pl', 661: 'Ledgebrook Rd', 662: 'Edgewood St', 663: 'Bynner St', 664: 'Rosemary St', 665: 'Speare Pl', 666: 'Chestnut St', 667: 'Shawmut St', 668: 'Harcourt St', 669: 'Montgomery St', 670: 'Hartland St', 671: 'Savin St', 672: 'Norway St', 673: 'Devon St', 674: 'H St', 675: 'Coleman St', 676: 'Clarkson St', 677: 'St James Ave', 678: 'Stanhope St', 679: 'Westview St', 680: 'Ames St', 681: 'Charles Street South', 682: 'Woodgate St', 683: 'Woodbole Ave', 684: 'Cahners Pl', 685: 'Lynde St', 686: 'Hammond St', 687: 'Wall St', 688: 'O St', 689: 'Moseley St', 690: 'La Grange St', 691: 'Dwight St', 692: 'Cameron St', 693: 'Carolina Ave', 694: 'Child St', 695: 'New Heath St', 696: 'Middleton St', 697: 'Wentworth St', 698: 'Guild St', 699: 'Marcella St', 700: 'Frawley St', 701: 'Kirkwood Rd', 702: 'Ruggles St', 703: 'Wabeno St', 704: 'Gerard St', 705: 'Kemble St', 706: 'Pembroke St', 707: 'Pevear Pl', 708: 'Wellington Ct', 709: 'Windsor St', 710: 'Marginal Rd', 711: 'Temple Pl', 712: 'Willet St', 713: 'Dedham Town Line', 714: 'Brookley Rd', 715: 'Bigelow St', 716: 'Winship St', 717: 'Rockwell St', 718: 'Batterymarch St', 719: 'Wharf St', 720: 'Custom House St', 721: 'Waumbeck St', 722: 'Dunbar Ave', 723: 'B St', 724: 'Aguadilla St', 725: 'Warren Av', 726: 'San Juan St', 727: 'Phillips St', 728: 'Mt Vernon', 729: 'Sunnyside St', 730: 'Deering Rd', 731: 'Hazleton St', 732: 'Trenton St', 733: 'Cabot St', 734: 'North Bennet St', 735: 'Tileston St', 736: 'O Street', 737: 'Shore Rd', 738: 'I Street', 739: 'Westwood St', 740: 'Puritan Ave', 741: 'Roys St', 742: 'Staniford St', 743: 'Milton Av', 744: 'West Cottage St', 745: 'SUSI YARD', 746: 'Charles Street Fw', 747: 'Claybourne St', 748: 'Wayland St', 749: 'Castleton St', 750: 'Dearborn St', 751: 'Malden St', 752: 'Warrenton Pl', 753: 'St Thomas Moore Rd', 754: 'Thorn St', 755: 'Fairmount Ave', 756: 'Massasoit St', 757: 'Maywood St', 758: 'Kemp St', 759: 'Gallivan Blvd', 760: 'Beech St', 761: 'Burnett St', 762: 'Bird St', 763: 'Hutchings St', 764: 'Stanwood St', 765: 'Wyoming St', 766: 'Whittier St', 767: 'Arrow St', 768: 'North Margin St', 769: 'Fifth St', 770: 'Sixteenth St', 771: 'Sixth St', 772: 'Ninth St', 773: 'First Ave', 774: 'Third Ave', 775: 'Colmubus Ave', 776: 'Forsyth Way', 777: 'Mount Vernon St', 778: 'Forest Hill St', 779: 'Hanover', 780: 'End of Street', 781: 'N. Washington', 782: 'Atlantic', 783: 'North Washington', 784: 'North Square', 785: 'Fleet ', 786: 'Fleet', 787: 'Salem', 788: 'Pinckney St', 789: 'Maple Place', 790: 'Harrrison Ave', 791: 'Revere St', 792: 'Public Alley 301', 794: 'May St', 795: 'VFW Pkwy', 796: 'Moseley Street', 797: 'Crescent Avenue', 798: 'Freeport Street', 799: 'Dorchester Avenue', 800: 'Park Street', 801: 'Columbia Road', 802: 'Bellevue Street', 803: 'Hancock Street', 804: 'Glendale Street', 805: 'Davern Street', 806: 'Bowdoin Street', 807: 'Ashmont Street', 808: 'Washington Street', 809: 'Glenarm St', 810: 'Glenarm Street', 811: 'Seaver Street', 812: 'Erie Street', 813: 'Glenway Street', 814: 'Harvard Street', 815: 'Bowdoin Avenue', 816: 'Geneva Avenue', 817: 'Blue Hill Avenue', 818: 'Howard Street', 819: 'Julian Street', 820: 'Boxford Street', 821: 'Quincy Street', 822: 'Brookford Street', 823: 'West Cottage Street', 824: 'Dudley Street', 825: 'East Cottage Street', 826: 'East Cottage', 827: 'Humphreys Street', 828: 'Wendover Street', 829: 'Elm Hill Street', 830: 'Maple Street', 831: 'Georgia Street', 832: 'Elm Hill Avenue', 833: 'Kneeland Street', 834: 'Harrison Avenue', 835: 'Colburne Street', 836: 'Parson St', 837: 'Brookline line', 838: 'Brainerd Road', 839: 'Dead end', 840: 'Dakota St', 841: 'Corona St', 842: 'Constitition Rd', 843: 'Monastery Rd', 844: 'Cushing Ave', 845: 'Bodwell St', 846: 'Virginia St', 847: 'Glendale St', 848: 'Alexander St', 849: 'Franklin Park', 850: 'Cushing St', 851: 'Milton St', 852: 'Nelson St', 853: 'Seldon St', 854: 'Fairmount St', 855: 'Wilmington St', 856: 'Hartford St', 857: 'Howard St', 858: 'Robin Hood St', 859: 'Lingard St', 860: 'Hartfold St', 861: 'Dacia St', 862: 'George St', 863: 'Clifton St', 864: 'Washingston St', 865: 'Everett Ave', 866: 'Valley Rd', 867: 'Vinson St', 868: 'Glenway St', 869: 'Greenwood St', 870: 'Levant St', 871: 'Gevena Ave', 872: 'Claymoss Rd', 873: 'Colborne Rd', 874: 'Milton Ave', 875: 'Sycamore St', 876: 'Norfolk Ave', 877: 'A St', 878: 'Fort Point Channel', 879: 'Merrill St', 880: 'Erie St', 881: 'Bradshaw St', 882: 'McLellan St', 883: 'Charlotte St', 884: 'Linvale Ter', 885: 'Hyde Park Ave', 886: 'Canterbury St', 887: 'Jerome St', 888: 'Trull St', 889: 'Rill St', 890: 'Ware St', 891: 'Mount Cushing Ter', 892: 'Downer Ave', 893: 'Salcombe St', 894: 'Upham Ave', 895: 'Devine Way', 896: 'Franklin Hill Ave', 897: 'Warren Ave', 898: 'Corbet St', 899: 'Evans St', 900: 'Westminister Ave', 901: 'Walnut Park', 902: 'Barnes Ave', 903: 'Annavoy St', 904: 'Leyden St', 905: 'Austin Ave', 906: 'Leverett St'}
 
     # -- Euclidean
-    directions, distance, time = astar('Washington St', 'Charlotte St', 'Euclidean')
+    directions, distance, time, dest_time, current_time = astar('Perkins St', 'Pinckney St', 'Euclidean','high')
     if len(directions) < 2:
         print('Directions using A-star Algorithm: ' + 'Cannot find a suitable path!')
     else: 
         print('Directions using A-star Algorithm, Euclidean Distance: ' + str(directions))
     print('Total distance to your destination according to A-star using Euclidean Distance will be about: ' + str(distance) + ' miles')
-    print('You have travelled a Euiclidean distance of: ' + str(Euclidean('Washington St', 'Charlotte St', 'Euclidean')))
-    print(timeit.timeit("astar('Washington St', 'Charlotte St', 'Euclidean')", setup="from __main__ import astar, Euclidean", number=10)/10)
+
+    print('If you leave now at ' + str(current_time) + ', you will reach your destination in about ' + str(time) + ' minutes, at about: ' + str(dest_time))
+    # print(timeit.timeit("astar('Washington St', 'Charlotte St', 'Euclidean')", setup="from __main__ import astar, Euclidean", number=10)/10)
     # -- Manhatan
-    directions, distance, time = astar('Washington St', 'Charlotte St', 'Manhatan')
-    if len(directions) < 2:
-        print('Directions using A-star Algorithm: ' + 'Cannot find a suitable path!')
-    else: 
-        print('Directions using A-star Algorithm, Manhatan Distance: ' + str(directions))
-    print('Total distance to your destination according to A-star using Manhatan Distance will be about: ' + str(distance) + ' miles')
-    print('You have travelled a Manhatan distance of: ' + str(Euclidean('Washington St', 'Charlotte St', 'Manhatan')))
-    print(timeit.timeit("astar('Washington St', 'Charlotte St', 'Manhatan')", setup="from __main__ import astar, Euclidean", number=10)/10)
+    # directions, distance, time = astar('Washington St', 'Canterbury St', 'Manhatan')
+    # if len(directions) < 2:
+    #     print('Directions using A-star Algorithm: ' + 'Cannot find a suitable path!')
+    # else: 
+    #     print('Directions using A-star Algorithm, Manhatan Distance: ' + str(directions))
+    # print('Total distance to your destination according to A-star using Manhatan Distance will be about: ' + str(distance) + ' miles')
+    # print(timeit.timeit("astar('Washington St', 'Charlotte St', 'Manhatan')", setup="from __main__ import astar, Euclidean", number=10)/10)
     # print('Directions using Networkx Algorithm: ' + str(nx.astar_path(G, 'Florence St', 'Walnut Ave')))
