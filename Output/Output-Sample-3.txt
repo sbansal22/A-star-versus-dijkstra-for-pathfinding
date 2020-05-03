@@ -4,4 +4,8 @@ Total distance to your destination according to Djikstra will be about: 6.036000
 Total distance to your destination according to NetworkX will be about: 15.892 miles
 If you leave now at 01:45:51, you will reach your destination at about: 02:00:21
 
+Directions using A-star Algorithm, Euclidean Distance: ['Ditson St', 'Geneva Ave', 'Dorchester Ave', 'Congress St', 'Blackstone St', 'Cambridge St', 'Mount Vernon St', 'Pinckney St']
+Total distance to your destination according to A-star using Euclidean Distance will be about: 8.175999999999998 miles
+If you leave now at 04:05:50, you will reach your destination in about 176.772 minutes, at about: 07:02:37
+
 
