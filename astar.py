@@ -49,7 +49,6 @@ def Euclidean(x, y, heuristic, traffic_level):
         # geographical distance between the nodes as well as the traffic
         # based on the traffic function returned index
         return dist_eu * traffic(x, traffic_level)
-
 # -----------------------------------------------------------------------------
 def traffic(street, traffic_level):
     '''
@@ -215,7 +214,7 @@ if __name__ == "__main__":
     pkl_file_graph.close()
 
     # -- Euclidean
-    directions, distance, time, dest_time, current_time = astar('Jeffries St', 'South St', 'Euclidean','high')
+    directions, distance, time, dest_time, current_time = astar('Washington St', 'Charlotte St', 'Euclidean','high')
     if len(directions) < 2:
         print('Directions using A-star Algorithm: ' + 'Cannot find a suitable path!')
     else: 
@@ -223,7 +222,7 @@ if __name__ == "__main__":
     print('Total distance to your destination according to A-star using Euclidean Distance will be about: ' + str(distance) + ' miles')
 
     print('If you leave now at ' + str(current_time) + ', you will reach your destination in about ' + str(time) + ' minutes, at about: ' + str(dest_time))
-    # print(timeit.timeit("astar('Washington St', 'Charlotte St', 'Euclidean')", setup="from __main__ import astar, Euclidean", number=10)/10)
+    print(timeit.timeit("astar('Ditson St', 'Pinckney St', 'Euclidean','high')", setup="from __main__ import astar, Euclidean, traffic", number=100)/100)
     # -- Manhatan
     # directions, distance, time = astar('Washington St', 'Canterbury St', 'Manhatan')
     # if len(directions) < 2:

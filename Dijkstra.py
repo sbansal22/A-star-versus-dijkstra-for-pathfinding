@@ -14,7 +14,7 @@ variable lengths.
 
 '''
 
-def djikstra(start, end):
+def dijkstra(start, end):
     '''
     Finds the optimal shortest path from a starting st. to the
     ending st. using Djikstra's Algorithm
@@ -111,17 +111,17 @@ def djikstra(start, end):
 
 if __name__ == "__main__":
   From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
-  directions, distance, current_time, time = djikstra('Jeffries St', 'South St')
+  directions, distance, current_time, time = dijkstra('Saratoga St', 'Perkins St')
   if len(directions) < 2:
-    print('Directions using Djikstra Algorithm: ' + 'Cannot find a suitable path!')
+    print('Directions using Dijkstra Algorithm: ' + 'Cannot find a suitable path!')
   else: 
-    print('Directions using Djikstra Algorithm: ' + str(directions))
-  nx_output_directions = list(nx.shortest_path(G, 'Jeffries St', 'South St'))
+    print('Directions using Dijkstra Algorithm: ' + str(directions))
+  nx_output_directions = list(nx.shortest_path(G, 'Saratoga St', 'Perkins St'))
   print('Directions using Networkx Algorithm: ' + str(nx_output_directions))
   output_distance = 0.0
   for i in range(len(nx_output_directions)-1):
       output_distance += float(G.edges[nx_output_directions[i],nx_output_directions[i+1]]['weight'])
-  print('Total distance to your destination according to Djikstra will be about: ' + str(distance) + ' miles')
+  print('Total distance to your destination according to Dijkstra will be about: ' + str(distance) + ' miles')
   print('Total distance to your destination according to NetworkX will be about: ' + str(output_distance*10) + ' miles')
   print('If you leave now at ' + str(current_time) + ', you will reach your destination at about: ' + str(time))
-#   print('Average runtime is: ' + str(timeit.timeit("djikstra('Washington St', 'Charlotte St')", setup="from __main__ import djikstra", number=10)/10))
+  print('Average runtime is: ' + str(timeit.timeit("dijkstra('Washington St', 'Charlotte St')", setup="from __main__ import dijkstra", number=10)/10))
