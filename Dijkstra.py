@@ -111,12 +111,12 @@ def djikstra(start, end):
 
 if __name__ == "__main__":
   From, To, Miles, G = readMyFile('St-Data-Original - Processed.csv')
-  directions, distance, current_time, time = djikstra('Saratoga St', 'Perkins St')
+  directions, distance, current_time, time = djikstra('Jeffries St', 'South St')
   if len(directions) < 2:
     print('Directions using Djikstra Algorithm: ' + 'Cannot find a suitable path!')
   else: 
     print('Directions using Djikstra Algorithm: ' + str(directions))
-  nx_output_directions = list(nx.shortest_path(G, 'Saratoga St', 'Perkins St'))
+  nx_output_directions = list(nx.shortest_path(G, 'Jeffries St', 'South St'))
   print('Directions using Networkx Algorithm: ' + str(nx_output_directions))
   output_distance = 0.0
   for i in range(len(nx_output_directions)-1):

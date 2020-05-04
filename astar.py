@@ -22,21 +22,18 @@ def Euclidean(x, y, heuristic, traffic_level):
 
     '''
 
+    # Geographical center of Boston, MA
+    x_loc = (42.3601, -71.0589)
+    y_loc = (42.3601, -71.0589)
     # Obtaining the geographical location of the streets
     for i in street_hashmap:
         if x == street_hashmap[i]:
             if i in street_locations:
                 x_loc = street_locations[i]
-            else:
-                # Geographical center of Boston, MA
-                x_loc = (42.3601, -71.0589)
         if y == street_hashmap[i]:
             if i in street_locations:
                 y_loc = street_locations[i]
-            else:
-                # Geographical center of Boston, MA
-                y_loc = (42.3601, -71.0589)
-    
+  
     # Computing the manhatan distance based on the raw latitude and longitude
     # from the geographical locations for the streets
     if heuristic == 'Manhatan':
@@ -71,12 +68,11 @@ def traffic(street, traffic_level):
     
     # Geographical center of Boston, MA
     boston_city = (42.3601, -71.0589)
+    x_loc = boston_city
     for i in street_hashmap:
         if street == street_hashmap[i]:
             if i in street_locations:
                 x_loc = street_locations[i]
-            else:
-                x_loc = boston_city
 
     # Computing the distance of the current node from the Boston City center
     a = sin((radians(boston_city[0]-x_loc[0]))/2)**2 + cos(x_loc[0]) * cos(boston_city[0]) * sin((radians(boston_city[1]-x_loc[1]))/2)**2
@@ -218,9 +214,8 @@ if __name__ == "__main__":
     street_hashmap = pickle.load(pkl_file_graph)
     pkl_file_graph.close()
 
-
     # -- Euclidean
-    directions, distance, time, dest_time, current_time = astar('Saratoga St', 'Perkins St', 'Euclidean','high')
+    directions, distance, time, dest_time, current_time = astar('Jeffries St', 'South St', 'Euclidean','high')
     if len(directions) < 2:
         print('Directions using A-star Algorithm: ' + 'Cannot find a suitable path!')
     else: 
