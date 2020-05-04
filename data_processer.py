@@ -4,17 +4,7 @@ import matplotlib.pyplot as plt
 from geopy.geocoders import Nominatim
 import pickle
 
-# # def Euclidean(x, y):
-# #     geolocator = Nominatim()
-# #     x_com = x + ', Boston, Massachusetts'
-# #     y_com = y + ', Boston, Massachusetts'
-# #     x_loc = geolocator.geocode(x_com)
-# #     y_loc = geolocator.geocode(y_com)
-# #     if x_loc is None or y_loc is None:
-# #         return print(x_com, y_com)
-# #     return (((x_loc.latitude-y_loc.latitude)**2 + ((x_loc.longitude-y_loc.longitude)**2)))
 
-'''
 def geo(G, street_hashmap):
     long_lat = dict()
     geolocator = Nominatim(user_agent="google maps")
@@ -40,7 +30,7 @@ def geo(G, street_hashmap):
                 long_lat[street] = (street_loc.latitude, street_loc.longitude)
     
     return long_lat
-'''
+
 
 def drop_dead_ends(df):
     df.drop(df.loc[df['from']=='Dead End'].index, inplace=True)
@@ -118,18 +108,30 @@ if __name__ == "__main__":
     ##################
     ### TEST geo() ###
     ##################
+    ### only run geo(G, street_hashmap) once to obtain the latitudes and longitudes of all nodes ###
     '''
     long_lat = geo(G, street_hashmap)
-
-    # write python dictionary to pickle file
-    output = open('location_hashmap.pkl', 'wb')
-    pickle.dump(long_lat, output)
-    output.close()
     '''
+    
+    # write street_hashmap to pickle file
+    output1 = open('graph_hashmap.pkl', 'wb')
+    pickle.dump(street_hashmap, output1)
+    output1.close()
 
-    # read python dictionary from pickle file
-    pkl_file = open('location_hashmap.pkl', 'rb')
-    lat_long = pickle.load(pkl_file)
-    pkl_file.close()
+    # write long_lat to pickle file
+    output2 = open('location_hashmap.pkl', 'wb')
+    pickle.dump(long_lat, output2)
+    output2.close()
 
-    print(lat_long)
+    # read street_hashmap from pickle file
+    pkl_file1 = open('graph_hashmap.pkl', 'rb')
+    graph_hashmap = pickle.load(pkl_file1)
+    pkl_file1.close()
+
+    # read long_lat from pickle file
+    pkl_file2 = open('location_hashmap.pkl', 'rb')
+    lat_long = pickle.load(pkl_file2)
+    pkl_file2.close()
+
+    # print(graph_hashmap)
+    # print(lat_long)
